@@ -1,7 +1,14 @@
 package main
 
-import "github.com/kainnsoft/duoscans/internal/builder"
+import (
+	"log"
+	"os"
+
+	"github.com/kainnsoft/duoscans/internal/builder"
+)
 
 func main() {
-	builder.Run()
+	if err := builder.Run(os.Args[1:]); err != nil {
+		log.Fatal(err)
+	}
 }

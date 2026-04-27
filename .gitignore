@@ -1,3 +1,6 @@
 .idea/
 vars/env.local.yaml
 .codex
+duoscans
+output/*
+!output/.gitkeep

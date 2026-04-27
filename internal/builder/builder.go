@@ -4,7 +4,6 @@ package builder
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/kainnsoft/duoscans/config"
 	"github.com/kainnsoft/duoscans/internal/connection"
@@ -14,48 +13,92 @@ import (
 	commonconfig "github.com/kainnsoft/duoscans/pkg/config"
 )
 
-// Run loads configuration and executes the duplicate-detection pipeline.
-func Run() {
-	cfg, err := commonconfig.FromEnv()
-	if err != nil {
-		log.Fatalf("reading config: %v", err)
+const (
+	commandDownload       = "download"
+	commandFindDuplicates = "find-duplicates"
+)
+
+// Run loads configuration and executes one CLI command.
+func Run(args []string) error {
+	if len(args) > 0 && args[0] == "--" {
+		args = args[1:]
 	}
 
-	conn, err := newConnector(&cfg)
+	if len(args) == 0 {
+		return fmt.Errorf("missing command; usage: duoscans [%s|%s]", commandDownload, commandFindDuplicates)
+	}
+
+	cfg, err := commonconfig.FromEnv()
 	if err != nil {
-		log.Fatalf("create connector: %v", err)
+		return fmt.Errorf("reading config: %w", err)
+	}
+
+	switch args[0] {
+	case commandDownload:
+		return runDownload(&cfg)
+	case commandFindDuplicates:
+		return runFindDuplicates(&cfg)
+	default:
+		return fmt.Errorf("unknown command %q; usage: duoscans [%s|%s]", args[0], commandDownload, commandFindDuplicates)
+	}
+}
+
+func runDownload(cfg *config.Config) error {
+	conn, err := newConnector(cfg)
+	if err != nil {
+		return fmt.Errorf("create connector: %w", err)
 	}
 	if err := conn.Connect(); err != nil {
-		log.Fatalf("connect to device: %v", err)
+		return fmt.Errorf("connect to device: %w", err)
 	}
 	defer conn.Close()
 
+	uc := &usecase.DownloadScreenshotsUseCase{
+		Screenshots: repository.NewDeviceRepository(conn, cfg.TempDir),
+	}
+	n, err := uc.Execute(usecase.DownloadScreenshotsInput{
+		GalleryPath: cfg.GalleryPath,
+		NumFiles:    cfg.NumFiles,
+	})
+	if err != nil {
+		return fmt.Errorf("execute: %w", err)
+	}
+
+	fmt.Printf("downloaded %d files\n", n)
+	if n > 0 {
+		fmt.Printf("files are saved under %s\n", cfg.TempDir)
+	}
+
+	return nil
+}
+
+func runFindDuplicates(cfg *config.Config) error {
 	ocrSvc := ocr.New()
 	defer ocrSvc.Close()
 
-	deviceRepo := repository.NewDeviceRepository(conn, cfg.TempDir)
 	logRepo, err := repository.NewCSVLogRepository(cfg.LogFile)
 	if err != nil {
-		log.Fatalf("init log repository: %v", err)
+		return fmt.Errorf("init log repository: %w", err)
 	}
 
 	uc := &usecase.FindDuplicatesUseCase{
-		Screenshots: deviceRepo,
+		Screenshots: repository.NewLocalDirectoryRepository(cfg.TempDir),
 		OCR:         ocrSvc,
 		Log:         logRepo,
 	}
-
 	n, err := uc.Execute(usecase.FindDuplicatesInput{
 		GalleryPath: cfg.GalleryPath,
 		NumFiles:    cfg.NumFiles,
 	})
 	if err != nil {
-		log.Fatalf("execute: %v", err)
+		return fmt.Errorf("execute: %w", err)
 	}
 
 	if n > 0 {
 		fmt.Printf("results written to %s\n", cfg.LogFile)
 	}
+
+	return nil
 }
 
 // newConnector selects the Connector implementation based on cfg.ConnectionType.

@@ -70,11 +70,15 @@ Edit `vars/env.local.yaml` to match your setup:
 # Build
 go build ./cmd/duoscans
 
-# Run
-APP_CONF_PATH=vars/env.local.yaml ./duoscans
+# Download screenshots from smartphone
+APP_CONF_PATH=vars/env.local.yaml ./duoscans download
+
+# OCR + duplicate detection from files already in temp_dir + CSV log
+APP_CONF_PATH=vars/env.local.yaml ./duoscans find-duplicates
 
 # Or without building
-APP_CONF_PATH=vars/env.local.yaml go run ./cmd/duoscans
+APP_CONF_PATH=vars/env.local.yaml go run ./cmd/duoscans -- download
+APP_CONF_PATH=vars/env.local.yaml go run ./cmd/duoscans -- find-duplicates
 ```
 
 ---
