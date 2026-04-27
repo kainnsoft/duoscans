@@ -14,21 +14,43 @@ type ADB struct {
 
 func (a *ADB) Connect() error {
 	args := a.args("devices")
-	out, err := exec.Command("adb", args...).Output()
+	out, err := exec.Command("adb", args...).CombinedOutput()
 	if err != nil {
-		return fmt.Errorf("adb connect: %w", err)
+		return fmt.Errorf("adb devices: %s: %w", strings.TrimSpace(string(out)), err)
 	}
-	if !strings.Contains(string(out), "device") {
-		return fmt.Errorf("adb: no device found")
+
+	var hasDevice bool
+	var statuses []string
+	for _, line := range strings.Split(strings.TrimSpace(string(out)), "\n") {
+		line = strings.TrimSpace(line)
+		if line == "" || strings.HasPrefix(line, "List of devices attached") {
+			continue
+		}
+		fields := strings.Fields(line)
+		if len(fields) < 2 {
+			continue
+		}
+		state := fields[1]
+		statuses = append(statuses, fmt.Sprintf("%s(%s)", fields[0], state))
+		if state == "device" {
+			hasDevice = true
+		}
+	}
+
+	if !hasDevice {
+		if len(statuses) == 0 {
+			return fmt.Errorf("adb: no devices/emulators found")
+		}
+		return fmt.Errorf("adb: no ready device, found: %s", strings.Join(statuses, ", "))
 	}
 	return nil
 }
 
 func (a *ADB) ListFiles(remoteDir string, limit int) ([]string, error) {
 	args := a.args("shell", "ls", "-1", remoteDir)
-	out, err := exec.Command("adb", args...).Output()
+	out, err := exec.Command("adb", args...).CombinedOutput()
 	if err != nil {
-		return nil, fmt.Errorf("adb ls %s: %w", remoteDir, err)
+		return nil, fmt.Errorf("adb ls %s: %s: %w", remoteDir, strings.TrimSpace(string(out)), err)
 	}
 
 	all := strings.Split(strings.TrimSpace(string(out)), "\n")
