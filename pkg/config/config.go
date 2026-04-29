@@ -30,9 +30,5 @@ func FromEnv() (config.Config, error) {
 		return config.Config{}, fmt.Errorf("parsing config: %w", err)
 	}
 
-	if err := cfg.Validate(); err != nil {
-		return config.Config{}, fmt.Errorf("validating config: %w", err)
-	}
-
 	return cfg, nil
 }

@@ -29,8 +29,16 @@ type Config struct {
 	LogFile string `yaml:"log_file"` // path to the CSV output log
 }
 
-// Validate checks that required fields are set and values are valid.
-func (c *Config) Validate() error {
+func (c *Config) normalize() {
+	if c.TempDir == "" {
+		c.TempDir = os.TempDir()
+	}
+}
+
+// ValidateDownload checks fields required by the download command.
+func (c *Config) ValidateDownload() error {
+	c.normalize()
+
 	switch c.ConnectionType {
 	case ConnectionADB, ConnectionUSB, ConnectionWiFi:
 	case "":
@@ -42,15 +50,22 @@ func (c *Config) Validate() error {
 	if c.GalleryPath == "" {
 		return fmt.Errorf("gallery_path is required")
 	}
+	if c.NumFiles <= 0 {
+		return fmt.Errorf("num_files must be greater than 0")
+	}
+
+	return nil
+}
+
+// ValidateFindDuplicates checks fields required by the find-duplicates command.
+func (c *Config) ValidateFindDuplicates() error {
+	c.normalize()
+
 	if c.LogFile == "" {
 		return fmt.Errorf("log_file is required")
 	}
 	if c.NumFiles <= 0 {
 		return fmt.Errorf("num_files must be greater than 0")
-	}
-
-	if c.TempDir == "" {
-		c.TempDir = os.TempDir()
 	}
 
 	return nil

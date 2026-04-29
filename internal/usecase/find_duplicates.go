@@ -8,8 +8,8 @@ import (
 	"github.com/kainnsoft/duoscans/internal/domain"
 )
 
-// FindDuplicatesUseCase orchestrates the full pipeline:
-// fetch screenshots → extract text → find duplicates → log results.
+// FindDuplicatesUseCase orchestrates the duplicate-detection pipeline:
+// read local screenshots → extract text → find duplicates → log results.
 type FindDuplicatesUseCase struct {
 	Screenshots domain.ScreenshotRepository
 	OCR         domain.OCRService
@@ -30,7 +30,7 @@ func (uc *FindDuplicatesUseCase) Execute(input FindDuplicatesInput) (int, error)
 	}
 	//defer uc.Screenshots.Cleanup(raw)
 
-	fmt.Printf("downloaded %d files\n", len(raw))
+	fmt.Printf("loaded %d files from temp_dir\n", len(raw))
 
 	var enriched []domain.Screenshot
 	for _, s := range raw {
