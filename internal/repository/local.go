@@ -10,6 +10,8 @@ import (
 	"github.com/kainnsoft/duoscans/internal/domain"
 )
 
+const duolingoFileMarker = "Duo"
+
 // LocalDirectoryRepository reads screenshots from a local directory.
 type LocalDirectoryRepository struct {
 	dir string
@@ -36,7 +38,9 @@ func (r *LocalDirectoryRepository) Fetch(_ string, numFiles int) ([]domain.Scree
 		ext := strings.ToLower(filepath.Ext(name))
 		switch ext {
 		case ".jpg", ".jpeg", ".png", ".webp", ".bmp", ".tif", ".tiff", ".heic":
-			paths = append(paths, filepath.Join(r.dir, name))
+			if strings.Contains(name, duolingoFileMarker) {
+				paths = append(paths, filepath.Join(r.dir, name))
+			}
 		}
 	}
 

@@ -35,8 +35,20 @@ func Run(args []string) error {
 
 	switch args[0] {
 	case commandDownload:
+		if len(args) != 1 {
+			return fmt.Errorf("command %q does not accept arguments; usage: duoscans %s", commandDownload, commandDownload)
+		}
+		if err := cfg.ValidateDownload(); err != nil {
+			return fmt.Errorf("validating config for %s: %w", commandDownload, err)
+		}
 		return runDownload(&cfg)
 	case commandFindDuplicates:
+		if len(args) != 1 {
+			return fmt.Errorf("command %q does not accept arguments; usage: duoscans %s", commandFindDuplicates, commandFindDuplicates)
+		}
+		if err := cfg.ValidateFindDuplicates(); err != nil {
+			return fmt.Errorf("validating config for %s: %w", commandFindDuplicates, err)
+		}
 		return runFindDuplicates(&cfg)
 	default:
 		return fmt.Errorf("unknown command %q; usage: duoscans [%s|%s]", args[0], commandDownload, commandFindDuplicates)

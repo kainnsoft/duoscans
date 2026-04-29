@@ -62,6 +62,10 @@ Edit `vars/env.local.yaml` to match your setup:
 | `temp_dir` | Local staging folder (empty = system temp) |
 | `log_file` | Output CSV path |
 
+Required fields by command:
+- `download`: `connection_type`, `gallery_path`, `num_files` (`temp_dir` defaults to system temp if empty)
+- `find-duplicates`: `temp_dir`, `num_files`, `log_file` (device connection fields are not required)
+
 ---
 
 ## Build & Run
@@ -74,6 +78,7 @@ go build ./cmd/duoscans
 APP_CONF_PATH=vars/env.local.yaml ./duoscans download
 
 # OCR + duplicate detection from files already in temp_dir + CSV log
+# Works offline; does not connect to smartphone
 APP_CONF_PATH=vars/env.local.yaml ./duoscans find-duplicates
 
 # Or without building
